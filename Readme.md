@@ -1,111 +1,106 @@
-Universal Asynchronous Receiver and Transmitter (UART) with Parity
+# UART with Parity Implementation (Verilog)
 
-Author Information
+An asynchronous serial communication protocol implementation featuring integrated parity checking for error detection, designed for high-reliability data exchange.
 
-Name: Dhruv Kansal
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Tool: Vivado 2024.1](https://img.shields.io/badge/Tool-Xilinx_Vivado_2024.1-orange)](https://www.xilinx.com/products/design-tools/vivado.html)
+[![Hardware: Verilog HDL](https://img.shields.io/badge/Language-Verilog_HDL-green)](#)
 
-Institution: Indian Institute of Technology (IIT), Mandi
+---
 
-Specialization: B.Tech in Microelectronics and VLSI
+## 👤 Author Information
+* **Name:** Dhruv Kansal
+* **Institution:** Indian Institute of Technology (IIT), Mandi
+* **Specialization:** B.Tech in Microelectronics and VLSI
 
-Project Overview
+---
 
-This project implements a complete UART (Universal Asynchronous Receiver and Transmitter) protocol in Verilog HDL. UART is a widely used serial communication protocol that allows for asynchronous data exchange between devices. This specific implementation includes a Transmitter (TX), a Receiver (RX), and a Baud Rate Generator (BRG), with integrated parity checking for error detection.
+## 📖 Project Overview
+This project implements a complete **Universal Asynchronous Receiver and Transmitter (UART)** protocol in Verilog HDL. UART is a foundational serial communication protocol used for asynchronous data exchange. 
 
-Technical Specifications
+This specific implementation includes a **Transmitter (TX)**, a **Receiver (RX)**, and a **Baud Rate Generator (BRG)**, with hardware-level **Even Parity** generation and checking for robust error detection.
 
-Protocol: Asynchronous Serial Communication
+## ⚙️ Technical Specifications
+| Feature | Specification |
+| :--- | :--- |
+| **Protocol** | Asynchronous Serial |
+| **Data Width** | 8-bit |
+| **Frame Format** | 1 Start, 8 Data, 1 Even Parity, 1 Stop |
+| **Baud Rate** | Configurable via BRG (16x Oversampling) |
+| **Error Detection** | Parity checking & Stop bit validation |
+| **Development Tool** | Xilinx Vivado 2024.1 |
 
-Data Width: 8-bit
+---
 
-Frame Format: 1 Start Bit, 8 Data Bits, 1 Parity Bit (Even), 1 Stop Bit
+## 🏗 System Architecture
 
-Baud Rate: Configurable via the Baud Rate Generator (BRG)
+### 1. Transmitter (TX_UART)
+The transmitter converts parallel 8-bit data into a serial stream using:
+* **TX_FSM**: Controls transitions between IDLE, START, DATA, PARITY, and STOP.
+* **TX_PISO**: Parallel-In Serial-Out shift register.
+* **TX_PARITY**: Logic to generate Even Parity for the frame.
+* **TX_MUX**: Multiplexer to select the output bit for the serial line.
 
-Error Detection: Parity checking and Stop bit validation
+### 2. Receiver (RECEIVER)
+Reconstructs parallel data from the incoming bitstream using:
+* **RX_FSM**: Manages sampling at the center of the bit period.
+* **SIPO**: Serial-In Parallel-Out register to collect data bits.
+* **Parity & Stop Checkers**: Validates data integrity and synchronization.
+* **Start Detector**: Identifies the high-to-low transition to trigger reception.
 
-HDL: Verilog
+### 3. Baud Rate Generator (BRG)
+Generates the sample clock. The receiver clock runs at **16x the baud rate**, allowing the system to oversample the incoming signal and find the ideal sampling point (the middle of the bit period) for maximum accuracy.
 
-Tools: Xilinx Vivado 2024.1
+---
 
-System Architecture
+## 🚦 State Machine Logic
 
-1. Transmitter (TX_UART)
+### Transmitter States
+1.  **IDLE**: Waiting for the `TX_start` signal.
+2.  **START**: Pulls the line low for one bit duration.
+3.  **DATA**: Shifts out 8 bits of data.
+4.  **PARITY**: Appends the calculated even parity bit.
+5.  **STOP**: Pulls the line high and returns to IDLE.
 
-The transmitter converts parallel 8-bit data into a serial stream. It consists of:
+### Receiver States
+1.  **IDLE**: Monitoring `rx_in` for a start bit.
+2.  **DATA**: Sampling the 8-bit payload.
+3.  **PARITY**: Sampling and validating parity bit.
+4.  **STOP**: Validating the stop bit before asserting `rx_done`.
 
-TX_FSM: A Finite State Machine that controls the transition between IDLE, START, DATA, PARITY, and STOP states.
+---
 
-TX_PISO: A Parallel-In Serial-Out shift register.
+## 🧪 Simulation & Verification
+The design was verified using the `TEST_UART_RX.v` testbench in Vivado.
 
-TX_PARITY: Generates an even parity bit for the data frame.
+* **Scenario Tested**: Transmission of `8'hAB` (`10101011`).
+* **Result**: Successful serialization and reconstruction.
+* **Timing**: BRG correctly synchronized the TX and RX modules.
+* **Reliability**: Zero parity or stop bit errors detected during standard behavioral simulation.
 
-TX_MUX: Selects the appropriate bit (Start, Data, Parity, or Stop) to send to the TX_data_out line.
+> [!TIP]
+> **Waveform Verification:** View the behavioral simulation waveforms in Vivado to confirm the shifting pattern in the SIPO register.
 
-2. Receiver (RECEIVER)
+---
 
-The receiver reconstructs the parallel data from the incoming serial bitstream. It consists of:
+## 🚀 How to Use
+1.  **Clone the Repository:**
+    ```bash
+    git clone [https://github.com/yourusername/UART-with-Parity.git](https://github.com/yourusername/UART-with-Parity.git)
+    ```
+2.  **Add to Vivado:**
+    * Create a new project in Vivado 2024.1.
+    * Add all `.v` source files from the `src` folder.
+    * Set `UART.v` as the **Top Module**.
+3.  **Run Simulation:**
+    * Launch behavioral simulation using the provided testbench to verify functionality.
 
-RX_FSM: Synchronizes with the incoming start bit and manages the sampling of data, parity, and stop bits.
-
-SIPO: A Serial-In Parallel-Out shift register that collects the incoming bits.
-
-Parity Checker: Compares the received parity bit with the calculated parity of the data to detect single-bit errors.
-
-Stop Bit Checker: Validates that the frame ends with a logic '1' to ensure synchronization.
-
-Detect Start: A simple module to identify the high-to-low transition of the start bit.
-
-3. Baud Rate Generator (BRG)
-
-The BRG generates the necessary clock signals for both the transmitter and the receiver. The receiver clock typically runs at 16x the baud rate to allow for oversampling and finding the middle of the bit period for accurate data capture.
-
-State Machine Logic
-
-Transmitter States:
-
-IDLE: Transmitter is waiting for the TX_start signal.
-
-START: Sends the low-logic start bit.
-
-DATA: Shifts out 8 bits of data sequentially.
-
-PARITY: Sends the calculated parity bit.
-
-STOP: Sends the high-logic stop bit and returns to IDLE.
-
-Receiver States:
-
-IDLE: Waiting for a high-to-low transition on the rx_in line.
-
-DATA: Samples the incoming data bits at the center of each bit period.
-
-PARITY: Samples and validates the parity bit.
-
-STOP: Validates the stop bit and asserts rx_done.
-
-Simulation Results
-
-The design was verified using a comprehensive testbench (TEST_UART_RX.v).
-
-Verification Highlights:
-
-Successful Transmission: Parallel data 8'hAB (10101011) was successfully serialized and reconstructed.
-
-Accurate Timing: The Baud Rate Generator correctly synchronized the TX and RX modules.
-
-Zero Errors: No parity or stop bit errors were detected during standard operation.
-
-Waveform Verification: Behavioral simulation waveforms confirm the shifting pattern in the SIPO register as data is reconstructed.
-
-How to Use
-
-Source Files: All .v files should be added to a Vivado project.
-
-Top Module: Set UART.v as the top-level module for synthesis.
-
-Simulation: Run the behavioral simulation using TEST_UART_RX.v.
-
-Implementation: To put this on an FPGA, create a .xdc constraint file mapping clk, rst, TX_data_out, and rx_data_in to the physical pins of your board.
-
-Developed as part of the Microelectronics and VLSI curriculum at IIT Mandi.
+```verilog
+// Example top-level instantiation
+UART my_uart (
+    .clk(sys_clk),
+    .rst(reset),
+    .tx_data(data_in),
+    .rx_data(data_out)
+    // ... other ports
+);
